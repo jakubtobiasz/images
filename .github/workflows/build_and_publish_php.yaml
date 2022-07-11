@@ -1,0 +1,55 @@
+name: Publish Docker image
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+
+env:
+    REGISTRY: ghcr.io
+    IMAGE_NAME: php
+
+jobs:
+    build_and_push:
+        name: 'Push Docker image to registry - ${{ matrix.php }}-${{ matrix.distro }}'
+
+        strategy:
+            fail-fast: false
+            matrix:
+                php: [ "7.4", "8.0", "8.1" ]
+                distro: [ "fpm", "fpm-alpine" ]
+
+        runs-on: ubuntu-latest
+
+        permissions:
+            packages: write
+            contents: read
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            -
+                name: Set up QEMU
+                uses: docker/setup-qemu-action@v1
+            -
+                name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v1
+
+            - name: Log in to the Container registry
+              uses: docker/login-action@v2
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and push Docker images
+              uses: docker/build-push-action@v2
+              with:
+                  context: php/${{ matrix.distro }}
+                  platforms: linux/amd64,linux/arm64
+                  build-args: |
+                      PHP_VERSION=${{ matrix.php }}-${{ matrix.distro }}
+                  push: true
+                  tags: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ matrix.php }}-${{ matrix.distro }}
