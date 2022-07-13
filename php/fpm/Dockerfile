@@ -10,6 +10,10 @@ RUN set -eux; \
                     libwebp-dev libzip-dev zlib1g; \
     apt clean;
 
+RUN curl -sS https://get.symfony.com/cli/installer | bash; \
+    mv /root/.symfony/bin/symfony /usr/local/bin/symfony; \
+    chmod +x /usr/local/bin/symfony;
+
 RUN set -eux; \
     docker-php-ext-install gd ctype dom exif intl pdo pdo_mysql xml xsl zip;
 
